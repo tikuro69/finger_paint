@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# Editor and local workspace files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Local generated images or exports
+*.png
+*.jpg
+*.jpeg
+*.webp
+
+# Logs and temporary files
+*.log
+tmp/
+temp/
