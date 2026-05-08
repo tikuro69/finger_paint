@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -8,14 +8,14 @@
   </head>
   <body>
     <main class="app">
-      <header class="toolbar" aria-label="ペイントツール">
+      <header class="toolbar" aria-label="Paint tools">
         <div class="control color-control">
-          <label for="paintColor">色</label>
+          <label for="paintColor">Color</label>
           <input id="paintColor" type="color" value="#2b70d6" />
         </div>
 
         <div class="control">
-          <label for="brushSize">サイズ <span id="brushSizeValue">42</span></label>
+          <label for="brushSize">Size <span id="brushSizeValue">42</span></label>
           <input id="brushSize" type="range" min="12" max="120" value="42" />
         </div>
 
@@ -25,20 +25,20 @@
         </div>
 
         <div class="control touch-control">
-          <label for="touchType">タッチ</label>
+          <label for="touchType">Touch</label>
           <select id="touchType">
-            <option value="finger">指</option>
-            <option value="bristle">毛筆</option>
+            <option value="finger">Finger</option>
+            <option value="bristle">Bristle</option>
           </select>
         </div>
 
         <div class="actions">
-          <button id="clearButton" type="button">クリア</button>
-          <button id="saveButton" type="button">PNG保存</button>
+          <button id="clearButton" type="button">Clear</button>
+          <button id="saveButton" type="button">Save PNG</button>
         </div>
       </header>
 
-      <section class="canvas-wrap" aria-label="フィンガーペイントキャンバス">
+      <section class="canvas-wrap" aria-label="Finger painting canvas">
         <canvas id="paintCanvas"></canvas>
       </section>
     </main>

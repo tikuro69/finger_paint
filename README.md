@@ -1,32 +1,32 @@
 # Finger Paint Smear
 
-HTML Canvas 2D API だけで作った、指で絵の具をこすったように描ける小さなアートプログラムです。
+A small art program built only with the HTML Canvas 2D API. It lets you paint as if you were smearing wet paint with your finger.
 
-クリックするとキャンバス上に丸い絵の具の塊を置き、マウスやタッチでドラッグすると周辺の色を拾いながら、移動方向に沿って色が伸びます。液体のようには垂れず、油絵やフィンガーペイントの短い筋が残る表現を目指しています。
+Click to place a round blob of paint on the canvas. Drag with the mouse or touch to pick up nearby colors and pull them along the direction of movement. The paint does not drip like liquid; the goal is a smeared oil-paint or finger-paint texture with visible strokes.
 
-## ファイル構成
+## Files
 
-- `index.html`: 画面とツールバーのHTML
-- `style.css`: レイアウトとシンプルなUI
-- `script.js`: Canvas描画、色のサンプリング、smear処理
-- `README.md`: この説明
+- `index.html`: Page structure and toolbar
+- `style.css`: Layout and simple UI styling
+- `script.js`: Canvas drawing, color sampling, and smear behavior
+- `README.md`: Project notes
 
-## 操作方法
+## How to Use
 
-1. `index.html` をブラウザで開きます。
-2. カラーピッカーで絵の具の色を選びます。
-3. キャンバスをクリック、またはタップすると絵の具の塊を置けます。
-4. 押したままドラッグすると、下の色を拾って混ざりながら引きずります。
-5. Mac では `command` キーを押しながらドラッグすると、新しい色を載せずにキャンバス上の色だけをこすって混ぜます。
-6. `タッチ` で、ベターっとこする `指` と、筋が残る `毛筆` の質感を切り替えられます。
-7. `サイズ` でブラシの太さを調整できます。
-8. `Smear` で色を運ぶ距離、濃さ、混ざりの強さを調整できます。
-9. `クリア` でキャンバスを紙色に戻します。
-10. `PNG保存` で現在の絵をPNG画像として保存できます。
+1. Open `index.html` in a browser.
+2. Choose a paint color with the color picker.
+3. Click or tap the canvas to place a blob of paint.
+4. Press and drag to pick up the colors underneath and smear them across the canvas.
+5. On Mac, hold the `command` key while dragging to smear only the existing canvas colors without adding new paint.
+6. Use `Touch` to switch between the broad, flat `Finger` feel and the streaky `Bristle` feel.
+7. Use `Size` to adjust the brush size.
+8. Use `Smear` to adjust how far, how strongly, and how densely the colors are dragged.
+9. Use `Clear` to reset the canvas to the paper color.
+10. Use `Save PNG` to save the current painting as a PNG image.
 
-## 実装メモ
+## Implementation Notes
 
-- 外部ライブラリは使っていません。
-- `getImageData()` でブラシ周辺の色を読み取り、平均色を短い線や楕円として重ねています。
-- 処理範囲はブラシ周辺だけにして、重くなりすぎないようにしています。
-- Pointer Events を使っているため、マウス操作とタッチ操作の両方に対応します。
+- No external libraries are used.
+- `getImageData()` samples colors around the brush, then redraws those colors as short strokes or translucent ellipses.
+- Processing is limited to the brush area to keep the program responsive.
+- Pointer Events are used, so both mouse and touch input are supported.
