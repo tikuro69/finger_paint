@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Finger Paint Smear</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="toolbar" aria-label="ペイントツール">
+        <div class="control color-control">
+          <label for="paintColor">色</label>
+          <input id="paintColor" type="color" value="#2b70d6" />
+        </div>
+
+        <div class="control">
+          <label for="brushSize">サイズ <span id="brushSizeValue">42</span></label>
+          <input id="brushSize" type="range" min="12" max="120" value="42" />
+        </div>
+
+        <div class="control">
+          <label for="smearStrength">Smear <span id="smearValue">62</span></label>
+          <input id="smearStrength" type="range" min="10" max="100" value="62" />
+        </div>
+
+        <div class="actions">
+          <button id="clearButton" type="button">クリア</button>
+          <button id="saveButton" type="button">PNG保存</button>
+        </div>
+      </header>
+
+      <section class="canvas-wrap" aria-label="フィンガーペイントキャンバス">
+        <canvas id="paintCanvas"></canvas>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
