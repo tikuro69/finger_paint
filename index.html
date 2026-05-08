@@ -21,7 +21,15 @@
 
         <div class="control">
           <label for="smearStrength">Smear <span id="smearValue">62</span></label>
-          <input id="smearStrength" type="range" min="10" max="100" value="62" />
+          <input id="smearStrength" type="range" min="0" max="100" value="62" />
+        </div>
+
+        <div class="control touch-control">
+          <label for="touchType">タッチ</label>
+          <select id="touchType">
+            <option value="finger">指</option>
+            <option value="bristle">毛筆</option>
+          </select>
         </div>
 
         <div class="actions">

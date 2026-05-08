@@ -32,7 +32,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -89,6 +90,20 @@ input[type="color"] {
 input[type="range"] {
   accent-color: var(--accent);
   cursor: pointer;
+}
+
+select {
+  min-height: 34px;
+  padding: 0 30px 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fffaf0;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.touch-control {
+  grid-template-columns: auto minmax(92px, 120px);
 }
 
 .actions {
