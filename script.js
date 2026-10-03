@@ -11,6 +11,7 @@ const clearButton = document.querySelector("#clearButton");
 const saveButton = document.querySelector("#saveButton");
 
 const paperColor = "#fbf6ea";
+const paperRgb = { r: 251, g: 246, b: 234 };
 let isPainting = false;
 let pointerId = null;
 let lastPoint = null;
@@ -151,6 +152,159 @@ function sampleAverageColor(x, y, radius) {
   return { r: r / weight, g: g / weight, b: b / weight };
 }
 
+function blendChannel(from, to, amount) {
+  return from + (to - from) * amount;
+}
+
+function getPatchRect(centerX, centerY, patchRadius, scale) {
+  const requestedX = Math.floor((centerX - patchRadius) * scale);
+  const requestedY = Math.floor((centerY - patchRadius) * scale);
+  const requestedSize = Math.max(2, Math.ceil(patchRadius * 2 * scale));
+  const x = clamp(requestedX, 0, canvas.width);
+  const y = clamp(requestedY, 0, canvas.height);
+  const right = clamp(requestedX + requestedSize, 0, canvas.width);
+  const bottom = clamp(requestedY + requestedSize, 0, canvas.height);
+  const width = right - x;
+  const height = bottom - y;
+
+  if (width <= 0 || height <= 0) return null;
+  return { x, y, width, height };
+}
+
+function getSmearMask(localX, localY, ux, uy, normalX, normalY, major, minor, patchRadius, profile) {
+  const along = localX * ux + localY * uy;
+  const across = localX * normalX + localY * normalY;
+  const ellipse = Math.sqrt((along / major) ** 2 + (across / minor) ** 2);
+  if (ellipse >= 1) return null;
+
+  let mask = (1 - ellipse) ** 1.35;
+  if (profile.mode === "bristle") {
+    const stripe = 0.45 + 0.55 * Math.abs(Math.sin((across + patchRadius) * 0.32));
+    mask *= stripe;
+  }
+
+  return { mask, along };
+}
+
+function smearExistingPixels(cx, cy, ux, uy, normalX, normalY, radius, strengthCurve, profile) {
+  const scale = window.devicePixelRatio || 1;
+  const patchRadius = radius * (profile.mode === "finger" ? 0.78 : 0.58);
+
+  const pullBack = radius * (0.35 + strengthCurve * 0.16);
+  const pushForward = radius * (0.18 + strengthCurve * 0.72);
+  const sourceCx = cx - ux * pullBack;
+  const sourceCy = cy - uy * pullBack;
+  const destCx = cx + ux * pushForward;
+  const destCy = cy + uy * pushForward;
+  const sourceRect = getPatchRect(sourceCx, sourceCy, patchRadius, scale);
+  const destRect = getPatchRect(destCx, destCy, patchRadius, scale);
+  if (!destRect) return;
+
+  const unionLeft = sourceRect ? Math.min(sourceRect.x, destRect.x) : destRect.x;
+  const unionTop = sourceRect ? Math.min(sourceRect.y, destRect.y) : destRect.y;
+  const unionRight = sourceRect
+    ? Math.max(sourceRect.x + sourceRect.width, destRect.x + destRect.width)
+    : destRect.x + destRect.width;
+  const unionBottom = sourceRect
+    ? Math.max(sourceRect.y + sourceRect.height, destRect.y + destRect.height)
+    : destRect.y + destRect.height;
+  const unionRect = {
+    x: unionLeft,
+    y: unionTop,
+    width: unionRight - unionLeft,
+    height: unionBottom - unionTop,
+  };
+  const original = ctx.getImageData(unionRect.x, unionRect.y, unionRect.width, unionRect.height);
+  const next = new Uint8ClampedArray(original.data);
+  const baseDeposit = profile.mode === "finger" ? 0.09 + strengthCurve * 0.34 : 0.06 + strengthCurve * 0.25;
+  const baseLift = 0.008 + strengthCurve * 0.024;
+  const major = patchRadius * (profile.mode === "finger" ? 1.05 : 1.12);
+  const minor = patchRadius * (profile.mode === "finger" ? 0.5 : 0.32);
+  const canvasWidth = canvas.width / scale;
+  const canvasHeight = canvas.height / scale;
+
+  function readOriginal(px, py) {
+    const x = Math.floor(px);
+    const y = Math.floor(py);
+
+    if (x < 0 || y < 0 || x >= canvas.width || y >= canvas.height) {
+      return paperRgb;
+    }
+
+    if (x < unionRect.x || y < unionRect.y || x >= unionRight || y >= unionBottom) {
+      return paperRgb;
+    }
+
+    const index = ((y - unionRect.y) * unionRect.width + (x - unionRect.x)) * 4;
+    return {
+      r: original.data[index],
+      g: original.data[index + 1],
+      b: original.data[index + 2],
+    };
+  }
+
+  function writeBlend(px, py, color, amount) {
+    if (px < unionRect.x || py < unionRect.y || px >= unionRight || py >= unionBottom) return;
+
+    const index = ((py - unionRect.y) * unionRect.width + (px - unionRect.x)) * 4;
+    next[index] = blendChannel(next[index], color.r, amount);
+    next[index + 1] = blendChannel(next[index + 1], color.g, amount);
+    next[index + 2] = blendChannel(next[index + 2], color.b, amount);
+    next[index + 3] = 255;
+  }
+
+  for (let y = 0; y < destRect.height; y += 1) {
+    for (let x = 0; x < destRect.width; x += 1) {
+      const canvasX = (destRect.x + x + 0.5) / scale;
+      const canvasY = (destRect.y + y + 0.5) / scale;
+      const localX = canvasX - destCx;
+      const localY = canvasY - destCy;
+      const smear = getSmearMask(localX, localY, ux, uy, normalX, normalY, major, minor, patchRadius, profile);
+      if (!smear) continue;
+
+      const sourceX = (sourceCx + localX) * scale;
+      const sourceY = (sourceCy + localY) * scale;
+      const sourceColor = readOriginal(sourceX, sourceY);
+      const fadeTowardTip = clamp(1 - Math.max(0, smear.along / major) * 0.55, 0.4, 1);
+      const deposit = smear.mask * baseDeposit * fadeTowardTip;
+      const px = destRect.x + x;
+      const py = destRect.y + y;
+
+      writeBlend(px, py, sourceColor, deposit);
+
+      const leftEdge = clamp((patchRadius - canvasX) / patchRadius, 0, 1);
+      const topEdge = clamp((patchRadius - canvasY) / patchRadius, 0, 1);
+      const rightEdge = clamp((canvasX - (canvasWidth - patchRadius)) / patchRadius, 0, 1);
+      const bottomEdge = clamp((canvasY - (canvasHeight - patchRadius)) / patchRadius, 0, 1);
+      const edgeContact = Math.max(leftEdge, topEdge, rightEdge, bottomEdge);
+
+      if (edgeContact > 0) {
+        const edgeFade = smear.mask * edgeContact ** 2 * (0.018 + strengthCurve * 0.06);
+        writeBlend(px, py, paperRgb, edgeFade);
+      }
+    }
+  }
+
+  if (sourceRect) {
+    for (let y = 0; y < sourceRect.height; y += 1) {
+      for (let x = 0; x < sourceRect.width; x += 1) {
+        const canvasX = (sourceRect.x + x + 0.5) / scale;
+        const canvasY = (sourceRect.y + y + 0.5) / scale;
+        const localX = canvasX - sourceCx;
+        const localY = canvasY - sourceCy;
+        const smear = getSmearMask(localX, localY, ux, uy, normalX, normalY, major, minor, patchRadius, profile);
+        if (!smear) continue;
+
+        const liftAmount = smear.mask * baseLift;
+        writeBlend(sourceRect.x + x, sourceRect.y + y, paperRgb, liftAmount);
+      }
+    }
+  }
+
+  original.data.set(next);
+  ctx.putImageData(original, unionRect.x, unionRect.y);
+}
+
 function getSmearPaint(cx, cy, ux, uy, radius, strengthCurve, usesPickedColorOnly) {
   const picked = sampleAverageColor(cx - ux * radius * 0.45, cy - uy * radius * 0.45, radius * 0.58);
   const under = sampleAverageColor(cx, cy, radius * 0.42);
@@ -281,12 +435,17 @@ function smearStroke(from, to, options = {}) {
   ctx.save();
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
-  ctx.globalCompositeOperation = "source-over";
 
   for (let step = 0; step < steps; step += 1) {
     const t = step / steps;
     const cx = from.x + dx * t;
     const cy = from.y + dy * t;
+
+    if (usesPickedColorOnly) {
+      smearExistingPixels(cx, cy, ux, uy, normalX, normalY, radius, strengthCurve, profile);
+      continue;
+    }
+
     const paint = getSmearPaint(cx, cy, ux, uy, radius, strengthCurve, usesPickedColorOnly);
 
     if (profile.mode === "finger") {

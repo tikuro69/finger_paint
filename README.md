@@ -28,5 +28,6 @@ Click to place a round blob of paint on the canvas. Drag with the mouse or touch
 
 - No external libraries are used.
 - `getImageData()` samples colors around the brush, then redraws those colors as short strokes or translucent ellipses.
+- Command-drag smearing moves existing pixels forward instead of repeatedly layering the sampled color, so a flat color does not keep getting darker as it is rubbed.
 - Processing is limited to the brush area to keep the program responsive.
 - Pointer Events are used, so both mouse and touch input are supported.
