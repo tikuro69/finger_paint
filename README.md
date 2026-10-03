@@ -2,6 +2,10 @@
 
 A small art program built only with the HTML Canvas 2D API. It lets you paint as if you were smearing wet paint with your finger.
 
+## Live Demo
+
+[Try Finger Paint Smear](https://tikuro69.github.io/finger_paint/) in your browser. No installation is required.
+
 Click to place a round blob of paint on the canvas. Drag with the mouse or touch to pick up nearby colors and pull them along the direction of movement. The paint does not drip like liquid; the goal is a smeared oil-paint or finger-paint texture with visible strokes.
 
 ## Files
